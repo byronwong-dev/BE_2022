@@ -1,0 +1,2 @@
+class NoAccountFound(Exception):
+    pass
