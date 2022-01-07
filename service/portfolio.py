@@ -51,15 +51,15 @@ class Portfolio:
 
     numDepositPlans = len(depositPlans)
 
-    ratioedDepositPlans = Portfolio.append_portfolio_ratio(depositPlans, crossPlan)
-
     totalDeposits = sum([deposit['amount'] for deposit in deposits])
 
     # default strategy
-    if 'default' in strategies and crossPlan is False and numDepositPlans == 2:
-      return Portfolio._spit_default(ratioedDepositPlans, totalDeposits, crossPlan)
+    if 'default' in strategies and numDepositPlans == 2:
+      return Portfolio._spit_default(depositPlans, totalDeposits, crossPlan)
 
-    
+    # proceed to different strategies
+    ratioedDepositPlans = Portfolio.append_portfolio_ratio(depositPlans, crossPlan)
+
     portfolioAmounts = [ amount for depositPlan in ratioedDepositPlans for (portfolio, amount) in depositPlan['portfolio'].items()]
 
     diminishingAmounts = ratio.get_diminishing_amounts(portfolioAmounts)
@@ -138,7 +138,7 @@ class Portfolio:
 
       depositPlans.sort(key=lambda x: sortOrder[x['type']])
 
-  def _spit_default(depositPlans, totalDeposits, crossPlan=False):
+  def _spit_default(depositPlans, totalDeposits, crossPlan = False):
     """Default strategy to split
 
     Args:
@@ -155,20 +155,41 @@ class Portfolio:
 
     # if more than total, we assign by ratio
     if totalDeposits >= totalExpectedAmount:
-      crossPlan = True
+      depositPlans = Portfolio.append_portfolio_ratio(depositPlans, crossPlan = True)
+
+      for depositPlan in depositPlans:        
+
+        splittedAmount = Portfolio._get_split_amount(depositPlan, totalDeposits)
+        depositPlan['split'] = splittedAmount
+      return depositPlans
+
+    # if else we overflow it
+    else:
+      print(f'crossplan {crossPlan}')
       depositPlans = Portfolio.append_portfolio_ratio(depositPlans, crossPlan)
-    
-    for depositPlan in depositPlans:
 
-      currentPlanExpectedAmount = Portfolio._get_current_plan_expected_amount(depositPlan)
+      for depositPlan in depositPlans:
 
-      splittedAmount = Portfolio._get_split_amount(depositPlan, totalDeposits)
-      depositPlan['split'] = splittedAmount
-      if not crossPlan:
-        totalDeposits -= sum([value for p, value in splittedAmount.items()])
+        currentPlanExpectedAmount = Portfolio._get_current_plan_expected_amount(depositPlan)
 
-    return depositPlans
-    
+        # ratio based on all deppsit plan
+        # once time assignment for splitting amount
+        if crossPlan:
+          splittedAmount = Portfolio._get_split_amount(depositPlan, totalDeposits)
+          depositPlan['split'] = splittedAmount
+
+        # ratio based on current plan
+        # after assigned, will carry forward balance
+        else:
+          if totalDeposits >= currentPlanExpectedAmount:
+            depositPlan['split'] = depositPlan['portfolio']
+          else:
+            splittedAmount = Portfolio._get_split_amount(depositPlan, totalDeposits)
+            depositPlan['split'] = splittedAmount
+          totalDeposits -= sum([value for p, value in depositPlan['split'].items()])
+
+      return depositPlans
+          
 
   def _get_current_plan_expected_amount(depositPlan):
     return sum([amount for (currentPlanName, amount) in depositPlan['portfolio'].items()])
