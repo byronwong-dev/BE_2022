@@ -99,12 +99,10 @@ for (customer, customerDepositPlans) in depositPlans.items():
     
     total = sum([ dep['amount'] for dep in deposits ])
 
-    print(f'Customer: {customer} | Deposit: {total}\n')
-    print(f'Basic split:\n')
+    print(f'Basic split ( Customer: {customer} | Deposit:  {total} ):\n')
     pprint.pprint(splitAmounts[customer]["basic scenario"])
-    print(f'\nCross-plan split:\n')
+    print(f'\nCross-plan split ( Customer: {customer} | Deposit:  {total} ):\n')
     pprint.pprint(splitAmounts[customer]["cross-plan splitting"])
-    print(f'\nDeposits: {total} \n')
-    print(f'\nCross-plan with diminishing amount split:\n')
+    print(f'\nCross-plan with diminishing amount split ( Customer: {customer} | Deposit:  {total} ):\n')
     pprint.pprint(splitAmounts[customer]["with diminishing amount"])
-# json.dumps(splitAmounts, indent=2)
+
