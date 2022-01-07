@@ -1,5 +1,3 @@
-from re import split
-from exceptions import ParameterFormatException, InvalidDepositPlanException
 from fractions import Fraction
 
 from helpers import ratio
@@ -40,10 +38,6 @@ class Portfolio:
         deposits dict:
         crossPlan (boolean, optional): if True, will calculate ratio via aggregate across plans
         strategies (list, optional): apply strategy in splitting the amount. Available: 'diminishing-first' (where in the case there is a diminishing amount, allocate that amount first, currently cross deposit plan)
-
-    Raises:
-        ParameterFormatException: [description]
-        InvalidDepositPlanException: [description]
 
     Returns:
         [type]: [description]

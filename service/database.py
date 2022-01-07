@@ -2,7 +2,7 @@ from datetime import datetime
 
 from exceptions import DepositNotFound
 
-# just example, does not persist 
+# just example, does not persist into database
 class Database:
 
     store = {
