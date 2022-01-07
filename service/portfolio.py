@@ -34,13 +34,15 @@ class Portfolio:
     """ get split amount
 
     Args:
-        depositPlans list: 
-        deposits dict:
-        crossPlan (boolean, optional): if True, will calculate ratio via aggregate across plans
-        strategies (list, optional): apply strategy in splitting the amount. Available: 'diminishing-first' (where in the case there is a diminishing amount, allocate that amount first, currently cross deposit plan)
+        depositPlans list: List of deposit plans for a single user
+        deposits list: List of deposits
+        crossPlan (boolean, optional): if True, will calculate ratio via aggregate across other deposit plans, else it calculates the portfolio deposit ratio within 1 deposit plans
+        strategies (list, optional): apply strategy in splitting the amount. 
+          Available: 'diminishing-first' (where in the case there is a diminishing amount, allocate that amount first, currently cross deposit plan)
+                      'default' (default strategy based on the amount deposited, deposit plan amount, and if the ratio should be cross deposit plan or single deposit plan)
 
     Returns:
-        [type]: [description]
+        dict: Deposit plan, injected with 'ratio' and 'split' (indicating the amount to split and allocate)
     """
 
     numDepositPlans = len(depositPlans)
