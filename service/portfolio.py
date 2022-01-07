@@ -161,7 +161,7 @@ class Portfolio:
 
     # if else we overflow it
     else:
-      print(f'crossplan {crossPlan}')
+
       depositPlans = Portfolio.append_portfolio_ratio(depositPlans, crossPlan)
 
       for depositPlan in depositPlans:
