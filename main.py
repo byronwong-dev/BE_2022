@@ -1,7 +1,4 @@
-import store.depositplan as depositPlan
-import store.portfolio as portfolio
-from service.portfolio import Portfolio
-from fractions import Fraction
+from service.depositplan import DepositPlan
 import pprint
 
 
@@ -91,10 +88,12 @@ for (customer, customerDepositPlans) in depositPlans.items():
 
     deposits = [ deposit for deposit in fundsDeposit if deposit['customer'] == customer ]
 
+    depositPlanObj = DepositPlan(customerDepositPlans)
+
     splitAmounts[customer] = {
-        'basic scenario' : Portfolio.get_split_amount(customerDepositPlans, deposits, crossPlan=False, strategies=['default']),
-        'cross-plan splitting' : Portfolio.get_split_amount(customerDepositPlans, deposits, crossPlan=True),
-        'with diminishing amount' : Portfolio.get_split_amount(customerDepositPlans, deposits),
+        'basic scenario' : depositPlanObj.get_split_amount(deposits, crossPlan=False, strategies=['default']),
+        'cross-plan splitting' : depositPlanObj.get_split_amount(deposits, crossPlan=True),
+        'with diminishing amount' : depositPlanObj.get_split_amount(deposits),
     }
     
     total = sum([ dep['amount'] for dep in deposits ])

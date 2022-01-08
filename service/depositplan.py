@@ -2,17 +2,22 @@ from fractions import Fraction
 
 from helpers import ratio
 
-class Portfolio:
+class DepositPlan:
 
-  def append_portfolio_ratio(depositPlans, crossPlan = False):
-    if type(depositPlans) is not list and type(depositPlans) is dict:
-      depositPlans = [depositPlans]
+  depositPlans = []
+
+  def __init__(self, depositPlans):
+    self.depositPlans = depositPlans
+
+  def append_ratio(self, crossPlan = False):
+    if type(self.depositPlans) is not list and type(self.depositPlans) is dict:
+      self.depositPlans = [self.depositPlans]
 
     ratios = []
 
-    totalAmount = sum([ amount for plan in depositPlans for (portfolio, amount) in plan['portfolio'].items()  ])
+    totalAmount = sum([ amount for plan in self.depositPlans for (portfolio, amount) in plan['portfolio'].items()  ])
 
-    for depositPlan in depositPlans:
+    for depositPlan in self.depositPlans:
 
       totalPlanAmount = sum([ amount for (portfolio, amount) in depositPlan['portfolio'].items()])
       
@@ -27,10 +32,10 @@ class Portfolio:
           'ratio': { portfolio: Fraction(amt / totalAmount) for (portfolio, amt) in depositPlan['portfolio'].items() }
           })
 
-    return ratios
+    self.depositPlans = ratios
 
 
-  def get_split_amount(depositPlans, deposits, crossPlan = False, strategies = ['default']):
+  def get_split_amount(self, deposits, crossPlan = False, strategies = ['default']):
     """ get split amount
 
     Args:
@@ -45,34 +50,34 @@ class Portfolio:
         dict: Deposit plan, injected with 'ratio' and 'split' (indicating the amount to split and allocate)
     """
 
-    numDepositPlans = len(depositPlans)
+    numDepositPlans = len(self.depositPlans)
 
     totalDeposits = sum([deposit['amount'] for deposit in deposits])
 
     # default strategy
     if 'default' in strategies and numDepositPlans == 2:
-      return Portfolio._spit_default(depositPlans, totalDeposits, crossPlan)
+      return self._spit_default(totalDeposits, crossPlan)
 
     # proceed to different strategies
-    ratioedDepositPlans = Portfolio.append_portfolio_ratio(depositPlans, crossPlan)
+    self.append_ratio(crossPlan)
 
-    portfolioAmounts = [ amount for depositPlan in ratioedDepositPlans for (portfolio, amount) in depositPlan['portfolio'].items()]
+    portfolioAmounts = [ amount for depositPlan in self.depositPlans for (portfolio, amount) in depositPlan['portfolio'].items()]
 
     diminishingAmounts = ratio.get_diminishing_amounts(portfolioAmounts)
 
     # diminish amount exists
     if 'diminishing-first' in strategies and diminishingAmounts:
-      return Portfolio._split_following_diminish_first(ratioedDepositPlans, diminishingAmounts, totalDeposits)
+      return self._split_following_diminish_first(diminishingAmounts, totalDeposits)
     
     # following ratio fallback
-    for depositPlan in ratioedDepositPlans:  
-      splittedAmount = Portfolio._get_split_amount(depositPlan, totalDeposits)
+    for depositPlan in self.depositPlans:  
+      splittedAmount = self._get_split_amount(depositPlan, totalDeposits)
       depositPlan['split'] = splittedAmount
 
-    return ratioedDepositPlans
+    return self.depositPlans
 
 
-  def _get_split_amount(depositPlan, totalAmount) -> dict:
+  def _get_split_amount(self, depositPlan, totalAmount) -> dict:
 
     if totalAmount == 0:
       return { portfolio: 0 for (portfolio, ratio) in depositPlan['ratio'].items() }
@@ -80,13 +85,13 @@ class Portfolio:
     return { portfolio: round(float(ratio * totalAmount),3) for (portfolio, ratio) in depositPlan['ratio'].items() }
 
 
-  def _split_following_diminish_first(depositPlans, diminishingAmounts, totalAmount):
+  def _split_following_diminish_first(self, diminishingAmounts, totalAmount):
 
     # get the deductable amount after diminishing amount 
     totalAmount -= sum(diminishingAmounts)
 
     # readjust the ratio of non-diminishing amount portfolio based on its own pool
-    adjustedDepositPlans = Portfolio._adjust_ratio_for_non_diminishing_portfolio_amount(depositPlans, diminishingAmounts)
+    adjustedDepositPlans = self._adjust_ratio_for_non_diminishing_portfolio_amount(self.depositPlans, diminishingAmounts)
 
     # split the amount
     for depositPlan in adjustedDepositPlans:
@@ -104,7 +109,7 @@ class Portfolio:
     return adjustedDepositPlans
 
 
-  def _adjust_ratio_for_non_diminishing_portfolio_amount(depositPlans, diminishingAmounts):
+  def _adjust_ratio_for_non_diminishing_portfolio_amount(self, depositPlans, diminishingAmounts):
 
     totalAmount = 0
     amountToAdjust = {}
@@ -125,16 +130,16 @@ class Portfolio:
     return adjustedDepositPlan
 
 
-  def _sorted_deposit_plans(depositPlans):
+  def _sort_plans(self):
 
       sortOrder = {
         'One-time': 1,
         'Monthly': 2
       }
 
-      depositPlans.sort(key=lambda x: sortOrder[x['type']])
+      self.depositPlans.sort(key=lambda x: sortOrder[x['type']])
 
-  def _spit_default(depositPlans, totalDeposits, crossPlan = False):
+  def _spit_default(self, totalDeposits, crossPlan = False):
     """Default strategy to split
 
     Args:
@@ -146,32 +151,32 @@ class Portfolio:
         [type]: [description]
     """
 
-    Portfolio._sorted_deposit_plans(depositPlans)
-    totalExpectedAmount = Portfolio._get_all_plans_expected_amount(depositPlans)
+    self._sort_plans()
+    totalExpectedAmount = self._get_all_plans_expected_amount(self.depositPlans)
 
     # if more than total, we assign by ratio
     if totalDeposits >= totalExpectedAmount:
-      depositPlans = Portfolio.append_portfolio_ratio(depositPlans, crossPlan = True)
+      self.append_ratio(crossPlan = True)
 
-      for depositPlan in depositPlans:        
+      for depositPlan in self.depositPlans:        
 
-        splittedAmount = Portfolio._get_split_amount(depositPlan, totalDeposits)
+        splittedAmount = self._get_split_amount(depositPlan, totalDeposits)
         depositPlan['split'] = splittedAmount
-      return depositPlans
+      return self.depositPlans
 
     # if else we overflow it
     else:
 
-      depositPlans = Portfolio.append_portfolio_ratio(depositPlans, crossPlan)
+      self.append_ratio(crossPlan)
 
-      for depositPlan in depositPlans:
+      for depositPlan in self.depositPlans:
 
-        currentPlanExpectedAmount = Portfolio._get_current_plan_expected_amount(depositPlan)
+        currentPlanExpectedAmount = self._get_current_plan_expected_amount(depositPlan)
 
         # ratio based on all deppsit plan
         # once time assignment for splitting amount
         if crossPlan:
-          splittedAmount = Portfolio._get_split_amount(depositPlan, totalDeposits)
+          splittedAmount = self._get_split_amount(depositPlan, totalDeposits)
           depositPlan['split'] = splittedAmount
 
         # ratio based on current plan
@@ -180,15 +185,15 @@ class Portfolio:
           if totalDeposits >= currentPlanExpectedAmount:
             depositPlan['split'] = depositPlan['portfolio']
           else:
-            splittedAmount = Portfolio._get_split_amount(depositPlan, totalDeposits)
+            splittedAmount = self._get_split_amount(depositPlan, totalDeposits)
             depositPlan['split'] = splittedAmount
           totalDeposits -= sum([value for p, value in depositPlan['split'].items()])
 
-      return depositPlans
+      return self.depositPlans
           
 
-  def _get_current_plan_expected_amount(depositPlan):
+  def _get_current_plan_expected_amount(self, depositPlan):
     return sum([amount for (currentPlanName, amount) in depositPlan['portfolio'].items()])
     
-  def _get_all_plans_expected_amount(depositPlans):
+  def _get_all_plans_expected_amount(self, depositPlans):
     return sum([amount for depositPlan in depositPlans for (currentPlanName, amount) in depositPlan['portfolio'].items()])

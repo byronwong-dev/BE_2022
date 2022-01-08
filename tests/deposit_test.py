@@ -1,4 +1,4 @@
-from service.portfolio import Portfolio
+from service.depositplan import DepositPlan
 from fractions import Fraction
 
 def test_can_obtain_split_ratio_for_deposit_plan():
@@ -20,21 +20,23 @@ def test_can_obtain_split_ratio_for_deposit_plan():
       }
     }
   ]
+
+  depositPlanObj = DepositPlan(depositPlans)
   
-  ratio = Portfolio.append_portfolio_ratio(depositPlans, crossPlan = True)
+  depositPlanObj.append_ratio(crossPlan = True)
   
-  assert list(ratio[0]['ratio'].keys()) == ['High Risk', 'Retirement']
-  assert float(Fraction(10, 17)) == float(Fraction(ratio[0]['ratio']['High Risk']))
-  assert float(Fraction(5,17)) ==  float(Fraction(ratio[0]['ratio']['Retirement']))
+  assert list(depositPlanObj.depositPlans[0]['ratio'].keys()) == ['High Risk', 'Retirement']
+  assert float(Fraction(10, 17)) == float(Fraction(depositPlanObj.depositPlans[0]['ratio']['High Risk']))
+  assert float(Fraction(5,17)) ==  float(Fraction(depositPlanObj.depositPlans[0]['ratio']['Retirement']))
 
-  assert float(Fraction(2, 17)) == float(Fraction(ratio[1]['ratio']['Retirement']))
+  assert float(Fraction(2, 17)) == float(Fraction(depositPlanObj.depositPlans[1]['ratio']['Retirement']))
 
-  ratio = Portfolio.append_portfolio_ratio(depositPlans, crossPlan = False)
-  assert list(ratio[0]['ratio'].keys()) == ['High Risk', 'Retirement']
-  assert float(Fraction(2,3)) == float(ratio[0]['ratio']['High Risk'])
-  assert float(Fraction(1,3)) ==  float(ratio[0]['ratio']['Retirement'])
+  depositPlanObj.append_ratio(crossPlan = False)
+  assert list(depositPlanObj.depositPlans[0]['ratio'].keys()) == ['High Risk', 'Retirement']
+  assert float(Fraction(2,3)) == float(depositPlanObj.depositPlans[0]['ratio']['High Risk'])
+  assert float(Fraction(1,3)) ==  float(depositPlanObj.depositPlans[0]['ratio']['Retirement'])
 
-  assert 1 == ratio[1]['ratio']['Retirement']
+  assert 1 == depositPlanObj.depositPlans[1]['ratio']['Retirement']
 
 def test_can_obtain_split_amount_given_ratio():
   depositPlans = [
@@ -63,7 +65,9 @@ def test_can_obtain_split_amount_given_ratio():
     },
   ]
 
-  splitAmount = Portfolio.get_split_amount(depositPlans, deposits, crossPlan = False)
+  depositPlanObj = DepositPlan(depositPlans)
+
+  splitAmount = depositPlanObj.get_split_amount(deposits, crossPlan = False)
 
   assert 1000 == splitAmount[0]['split']['High Risk']
   assert 500 == splitAmount[0]['split']['Retirement']
@@ -71,7 +75,7 @@ def test_can_obtain_split_amount_given_ratio():
   assert 0 == splitAmount[1]['split']['Simple Life']
   assert 0 == splitAmount[1]['split']['Adventure']
 
-  splitAmount = Portfolio.get_split_amount(depositPlans, deposits, crossPlan = True)
+  splitAmount = depositPlanObj.get_split_amount(deposits, crossPlan = True)
 
   assert 714.286 == splitAmount[0]['split']['High Risk']
   assert 357.143 == splitAmount[0]['split']['Retirement']
@@ -112,7 +116,9 @@ def test_amount_overflow_give_one_time_first():
     },
   ]
 
-  splitAmount = Portfolio.get_split_amount(depositPlans, deposits, crossPlan = False, strategies=['default'])
+  depositPlanObj = DepositPlan(depositPlans)
+
+  splitAmount = depositPlanObj.get_split_amount(deposits, crossPlan = False, strategies=['default'])
 
   assert 917.083 == splitAmount[0]['split']['High Risk']
   assert 183.417 == splitAmount[0]['split']['Retirement']
@@ -120,7 +126,7 @@ def test_amount_overflow_give_one_time_first():
   assert 0 == splitAmount[1]['split']['Retirement']
 
 
-  splitAmount = Portfolio.get_split_amount(depositPlans, depositsOnlyForOneTime, crossPlan = False, strategies=['default'])
+  splitAmount = depositPlanObj.get_split_amount(depositsOnlyForOneTime, crossPlan = False, strategies=['default'])
   assert 1000 == splitAmount[0]['split']['High Risk']
   assert 200 == splitAmount[0]['split']['Retirement']
   assert 0 == splitAmount[1]['split']['High Risk']
@@ -152,7 +158,9 @@ def test_amount_overflow_multiple_times_give_one_time_first():
     },
   ]
 
-  splitAmount = Portfolio.get_split_amount(depositPlans, deposits, crossPlan = False, strategies=['default'])
+  depositPlanObj = DepositPlan(depositPlans)
+
+  splitAmount = depositPlanObj.get_split_amount(deposits, crossPlan = False, strategies=['default'])
 
   assert 3571.429 == splitAmount[0]['split']['Retirement']
   assert 1428.571 == splitAmount[1]['split']['High Risk']
@@ -191,24 +199,26 @@ def test_can_obtain_split_decimal_amount_given_ratio():
       'amount': 225
     }
   ]
+
+  depositPlanObj = DepositPlan(depositPlans)
   
-  splittedDepositPlans = Portfolio.get_split_amount(depositPlans, deposits, crossPlan=False)
+  splittedDepositPlans = depositPlanObj.get_split_amount(deposits, crossPlan=False)
 
   assert 667 == splittedDepositPlans[0]['split']['High Risk']
   assert 333 == splittedDepositPlans[0]['split']['Retirement']
 
-  multipleDepositSplitAmount = Portfolio.get_split_amount(depositPlans, multipleDeposits, crossPlan=False)
+  multipleDepositSplitAmount = depositPlanObj.get_split_amount(multipleDeposits, crossPlan=False)
 
   assert 817.409 == multipleDepositSplitAmount[0]['split']['High Risk']
   assert 408.091 == multipleDepositSplitAmount[0]['split']['Retirement']
 
-  splittedDepositPlans = Portfolio.get_split_amount(depositPlans, deposits, crossPlan=True)
+  splittedDepositPlans = depositPlanObj.get_split_amount(deposits, crossPlan=True)
 
   assert 588.529 == splittedDepositPlans[0]['split']['High Risk']
   assert 293.824 == splittedDepositPlans[0]['split']['Retirement']
   assert 117.647 == splittedDepositPlans[1]['split']['Retirement']
 
-  multipleDepositSplitAmount = Portfolio.get_split_amount(depositPlans, multipleDeposits, crossPlan=True)
+  multipleDepositSplitAmount = depositPlanObj.get_split_amount(multipleDeposits, crossPlan=True)
 
   assert 721.243 == multipleDepositSplitAmount[0]['split']['High Risk']
   assert 360.081 == multipleDepositSplitAmount[0]['split']['Retirement']
@@ -232,8 +242,10 @@ def test_significant_uneven_ratio():
       'amount': 1000,
     }
   ]
+
+  depositPlanObj = DepositPlan(depositPlans)
   
-  splittedDepositPlans = Portfolio.get_split_amount(depositPlans, deposits, crossPlan=False, strategies=['diminishing-first'])
+  splittedDepositPlans = depositPlanObj.get_split_amount(deposits, crossPlan=False, strategies=['diminishing-first'])
   
   assert 997.50 == splittedDepositPlans[0]['split']['High Risk']
   assert 2.50 == splittedDepositPlans[0]['split']['Retirement']
@@ -255,7 +267,9 @@ def test_significant_uneven_ratio_multi_profile():
     }
   ]
 
-  splittedDepositPlans = Portfolio.get_split_amount(depositPlanMultiProfile, deposits, crossPlan=False, strategies=['diminishing-first'])
+  depositPlanObj = DepositPlan(depositPlanMultiProfile)
+
+  splittedDepositPlans = depositPlanObj.get_split_amount(deposits, crossPlan=False, strategies=['diminishing-first'])
 
   assert 998.75 == splittedDepositPlans[0]['split']['High Risk']
   assert 998.75 == splittedDepositPlans[0]['split']['Mid Risk']
@@ -279,7 +293,9 @@ def test_significant_uneven_ratio_multi_profile_decimals():
     }
   ]
 
-  splittedDepositPlans = Portfolio.get_split_amount(depositPlanMultiProfile, deposits, crossPlan=False, strategies=['diminishing-first'])
+  depositPlanObj = DepositPlan(depositPlanMultiProfile)
+
+  splittedDepositPlans = depositPlanObj.get_split_amount(deposits, crossPlan=False, strategies=['diminishing-first'])
 
   assert 1240.606 == splittedDepositPlans[0]['split']['High Risk']
   assert 756.894 == splittedDepositPlans[0]['split']['Mid Risk']
